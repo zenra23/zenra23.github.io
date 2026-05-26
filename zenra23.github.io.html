@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZEN-X23 // Developer</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@300;400;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #0f0f0f;
+    --green: #00ff41;
+    --green-dim: #00cc33;
+    --green-dark: #003311;
+    --amber: #ffb000;
+    --red: #ff2244;
+    --white: #e8e8e8;
+    --grey: #444;
+    --scanline: rgba(0,255,65,0.03);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* CRT scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      var(--scanline) 2px,
+      var(--scanline) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Noise texture */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 4rem 6vw;
+    position: relative;
+    border-bottom: 1px solid var(--green-dark);
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--green-dark) 1px, transparent 1px),
+      linear-gradient(90deg, var(--green-dark) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+  }
+
+  .boot-line {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--grey);
+    margin-bottom: 0.4rem;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+  }
+  .boot-line:nth-child(1) { animation-delay: 0.2s; }
+  .boot-line:nth-child(2) { animation-delay: 0.5s; }
+  .boot-line:nth-child(3) { animation-delay: 0.8s; }
+
+  .hero-name {
+    font-family: 'VT323', monospace;
+    font-size: clamp(5rem, 15vw, 12rem);
+    line-height: 0.9;
+    letter-spacing: -2px;
+    color: var(--green);
+    text-shadow:
+      0 0 20px var(--green),
+      0 0 60px rgba(0,255,65,0.3),
+      3px 3px 0 var(--green-dark);
+    opacity: 0;
+    animation: glitchIn 0.6s forwards 1.2s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-name::before {
+    content: 'ZEN-X23';
+    position: absolute;
+    left: 3px; top: 3px;
+    color: var(--red);
+    opacity: 0;
+    animation: glitchFlicker 4s infinite 2s;
+    clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%);
+  }
+
+  .hero-tag {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 300;
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    letter-spacing: 0.4em;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-top: 1rem;
+    opacity: 0;
+    animation: fadeIn 0.5s forwards 1.8s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-desc {
+    max-width: 520px;
+    margin-top: 2rem;
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.8;
+    opacity: 0;
+    animation: fadeIn 0.5s forwards 2.2s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-desc span { color: var(--green-dim); }
+
+  .hero-cta {
+    margin-top: 2.5rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeIn 0.5s forwards 2.6s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    padding: 0.7rem 1.8rem;
+    border: 1px solid var(--green);
+    background: transparent;
+    color: var(--green);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    cursor: crosshair;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--green);
+    transform: translateX(-101%);
+    transition: transform 0.2s;
+    z-index: -1;
+  }
+
+  .btn:hover::before { transform: translateX(0); }
+  .btn:hover { color: var(--bg); }
+
+  .btn.amber {
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+  .btn.amber::before { background: var(--amber); }
+
+  /* ── PROMPT ── */
+  .prompt {
+    position: absolute;
+    bottom: 2rem;
+    left: 6vw;
+    font-size: 0.8rem;
+    color: var(--green-dim);
+    animation: blink 1s step-end infinite;
+    z-index: 1;
+  }
+
+  /* ── SECTION BASE ── */
+  section {
+    padding: 5rem 6vw;
+    border-bottom: 1px solid var(--green-dark);
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    color: var(--grey);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: var(--white);
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 3rem;
+  }
+
+  .section-title span { color: var(--green); }
+
+  /* ── SKILLS GRID ── */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1px;
+    background: var(--green-dark);
+    border: 1px solid var(--green-dark);
+  }
+
+  .skill-card {
+    background: var(--bg2);
+    padding: 2rem;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .skill-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 0;
+    background: var(--green);
+    transition: height 0.3s;
+  }
+
+  .skill-card:hover { background: #111; }
+  .skill-card:hover::before { height: 100%; }
+
+  .skill-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .skill-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+  }
+
+  .skill-desc {
+    font-size: 0.78rem;
+    color: #555;
+    line-height: 1.7;
+  }
+
+  /* ── PROJECTS ── */
+  .projects-list { display: flex; flex-direction: column; gap: 1px; background: var(--green-dark); border: 1px solid var(--green-dark); }
+
+  .project-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.5rem 2rem;
+    background: var(--bg2);
+    transition: background 0.2s;
+    cursor: crosshair;
+  }
+
+  .project-row:hover { background: #0d0d0d; }
+
+  .project-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: var(--white);
+    text-transform: uppercase;
+  }
+
+  .project-stack {
+    font-size: 0.72rem;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .project-status {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    white-space: nowrap;
+  }
+
+  .status-live { border-color: var(--green); color: var(--green); }
+  .status-wip { border-color: var(--amber); color: var(--amber); }
+  .status-planned { border-color: var(--grey); color: var(--grey); }
+
+  /* ── CONTACT ── */
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+  }
+
+  .contact-block p {
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.9;
+    margin-bottom: 2rem;
+  }
+
+  .contact-links { display: flex; flex-direction: column; gap: 0.8rem; }
+
+  .contact-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--grey);
+    text-decoration: none;
+    transition: color 0.2s;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 0.8rem;
+  }
+
+  .contact-link:hover { color: var(--green); }
+  .contact-link span:first-child { color: var(--green-dim); min-width: 80px; }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 2rem 6vw;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    color: var(--grey);
+  }
+
+  .footer-sig { color: var(--green-dim); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes glitchIn {
+    0% { opacity: 0; transform: skewX(10deg) translateX(-20px); }
+    60% { opacity: 1; transform: skewX(-2deg) translateX(4px); }
+    100% { opacity: 1; transform: skewX(0) translateX(0); }
+  }
+
+  @keyframes glitchFlicker {
+    0%, 95%, 100% { opacity: 0; }
+    96% { opacity: 0.6; transform: translateX(-4px); }
+    97% { opacity: 0; }
+    98% { opacity: 0.4; transform: translateX(4px); }
+    99% { opacity: 0; }
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .contact-grid { grid-template-columns: 1fr; }
+    .project-row { grid-template-columns: 1fr; gap: 0.5rem; }
+    footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+
+  <div class="boot-line">// SYSTEM BOOT... OK</div>
+  <div class="boot-line">// LOADING USER: ZENRA23 ... DONE</div>
+  <div class="boot-line">// INITIALIZING zen-x23.is-a.dev ___</div>
+
+  <h1 class="hero-name">ZEN-X23</h1>
+  <p class="hero-tag">QA Engineer &nbsp;·&nbsp; Developer &nbsp;·&nbsp; Trader</p>
+  <p class="hero-desc">
+    Based in <span>Malaysia</span>. Building systems that don't break.<br>
+    QA/QC Engineer by day. Coder &amp; Bursa trader by night.<br>
+    <span>Semiconductor</span> · <span>AI Tools</span> · <span>KLSE Markets</span>
+  </p>
+
+  <div class="hero-cta">
+    <a href="https://github.com/zenra23" class="btn" target="_blank">// GitHub</a>
+    <a href="#projects" class="btn amber">// Projects</a>
+  </div>
+
+  <div class="prompt">root@zen-x23:~$ <span style="animation: blink 1s step-end infinite;">█</span></div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <p class="section-label">// capabilities</p>
+  <h2 class="section-title">What I <span>Do</span></h2>
+  <div class="skills-grid">
+    <div class="skill-card">
+      <span class="skill-icon">⚙️</span>
+      <div class="skill-name">QA / QC Engineering</div>
+      <p class="skill-desc">ITP creation, test pack management, inspection scheduling for semiconductor fab projects. Micron, Exyte standards.</p>
+    </div>
+    <div class="skill-card">
+      <span class="skill-icon">🤖</span>
+      <div class="skill-name">AI & Local LLMs</div>
+      <p class="skill-desc">Running Ollama, Open WebUI, Qwen, ComfyUI locally. Exploring automation workflows with open-source AI tools.</p>
+    </div>
+    <div class="skill-card">
+      <span class="skill-icon">📈</span>
+      <div class="skill-name">Bursa Trading</div>
+      <p class="skill-desc">KLSE trader with focus on screening and automation. Python-based tools, OpenBB, TradingView for market research.</p>
+    </div>
+    <div class="skill-card">
+      <span class="skill-icon">💻</span>
+      <div class="skill-name">Dev & Automation</div>
+      <p class="skill-desc">Python scripting, GitHub workflows, Claude Desktop MCP. Building tools that solve real engineering and trading problems.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <p class="section-label">// work</p>
+  <h2 class="section-title">Projects <span>&</span> Tools</h2>
+  <div class="projects-list">
+    <div class="project-row">
+      <div>
+        <div class="project-name">MSH Process Reclaim System</div>
+        <div class="project-stack" style="margin-top:0.3rem; font-size:0.72rem; color:#444;">QA/QC · ITP · Micron Singapore · F25D-3</div>
+      </div>
+      <div class="project-stack">PP Piping · SS316L · PFA</div>
+      <div class="project-status status-live">Active</div>
+    </div>
+    <div class="project-row">
+      <div>
+        <div class="project-name">KLSE Trading Screener</div>
+        <div class="project-stack" style="margin-top:0.3rem; font-size:0.72rem; color:#444;">Python · OpenBB · Yahoo Finance</div>
+      </div>
+      <div class="project-stack">Bursa · Automation</div>
+      <div class="project-status status-wip">WIP</div>
+    </div>
+    <div class="project-row">
+      <div>
+        <div class="project-name">Local AI Stack</div>
+        <div class="project-stack" style="margin-top:0.3rem; font-size:0.72rem; color:#444;">Ollama · Open WebUI · Qwen · Claude MCP</div>
+      </div>
+      <div class="project-stack">LLM · Self-hosted</div>
+      <div class="project-status status-live">Running</div>
+    </div>
+    <div class="project-row">
+      <div>
+        <div class="project-name">QA Document Automation</div>
+        <div class="project-stack" style="margin-top:0.3rem; font-size:0.72rem; color:#444;">Python · XLSX · DOCX generation</div>
+      </div>
+      <div class="project-stack">Engineering · Docs</div>
+      <div class="project-status status-wip">WIP</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <p class="section-label">// connect</p>
+  <h2 class="section-title">Get In <span>Touch</span></h2>
+  <div class="contact-grid">
+    <div class="contact-block">
+      <p>Engineer, developer, and trader based in Malaysia. Open to collaborations on QA tooling, trading automation, or AI-powered engineering workflows.</p>
+      <a href="https://github.com/zenra23" class="btn" target="_blank">// View GitHub</a>
+    </div>
+    <div class="contact-links">
+      <a href="https://github.com/zenra23" class="contact-link" target="_blank">
+        <span>GitHub</span>
+        <span>github.com/zenra23</span>
+      </a>
+      <a href="mailto:zenatulhaseinar@gmail.com" class="contact-link">
+        <span>Email</span>
+        <span>zenatulhaseinar@gmail.com</span>
+      </a>
+      <a href="#" class="contact-link">
+        <span>Location</span>
+        <span>Malaysia 🇲🇾</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>© 2025 ZEN-X23 // All rights reserved</div>
+  <div class="footer-sig">zen-x23.is-a.dev</div>
+</footer>
+
+</body>
+</html>
